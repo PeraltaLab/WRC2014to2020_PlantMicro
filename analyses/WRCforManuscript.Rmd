@@ -62,13 +62,27 @@ BiocManager::install("phyloseq")
 source("https://raw.githubusercontent.com/joey711/phyloseq/master/inst/scripts/installer.R", local = TRUE)
 ```
 ---------------------------------------------------------------------------------------------------------------------
-*READ IN THE PLANT DIVERSITY (2018 ONLY) FILE AND EXP DESIGN* 
+*READ IN THE PLANT FILE (2015 & 2018) AND EXP DESIGN* 
 ```{r Import Files - Plants, include = FALSE}
+
 file_path <- ("C:/Users/ohhey/OneDrive/Desktop/WRCcsvfiles/WRC1518_plantdata.csv") 
 plant <- read.csv(file_path)
+plant_M_MF <- subset(plant, treatment == "M" | treatment == "MF")
 
-plant_design <- ("C:/Users/ohhey/OneDrive/Desktop/WRCcsvfiles/WRC15_18_plantdesign.csv")
-df_plantdesign <- read.csv(plant_design)
+#plant_design <- ("C:/Users/ohhey/OneDrive/Desktop/WRCcsvfiles/2015_2018_WRC_soil_properties.csv")
+#df_plantdesign <- read.csv(plant_design)
+
+#Subset source and treatment 
+soil_M_MF <- subset(soil, source == "bulk")
+soil_M_MF <- subset(soil_M_MF, treatment == "M" | treatment == "MF")
+
+plant_M_MF_sort <- 
+  plant_M_MF %>%
+  group_by(year, treatment)
+
+soil_M_MF_sort <- 
+  soil_M_MF %>%
+  group_by(year, treatment)
 ```
 
 *READ IN 2015_2018_WRC_soil_properties*
@@ -168,11 +182,10 @@ bc_diversity$ditch <- as.factor(bc_diversity$ditch)
 ```
 *Diversity Metrics-- Richness, Shannon, Simpsons D*
 ```{r Diversity Metrics - Bacteria, echo = TRUE}
-colors <- c("M" = "gray70", "MF" = "darkgreen","M" = "gray70", "MF" = "darkgreen","M" = "gray70", "MF" = "darkgreen") #SET COLORS FOR BOXPLOT
+colors <- c("M" = "gray70", "MF" = "darkgreen","M" = "gray70", "MF" = "darkgreen","M" = "gray70", "MF" = "darkgreen") #SET COLORS FOR TREATMENTS
 
 
-M_Mf <- bc_diversity[bc_diversity$treatment %in% c("M", "MF"), ]  #Filter out Mowed and Mowed/Fertilized only
- 
+
 #RICHNESS
 rich <- ggplot(M_Mf, aes(x=treatment, y=bc_richness, color=as.factor(treatment)))+ geom_boxplot()+
 geom_point(aes(color=factor(treatment), shape=ditch), size=2, position = position_jitterdodge())+ scale_color_manual(name="Treatment", values=c("gray70", "darkgreen"), labels = c("Mowed", "Mowed/Fertilized"))+
@@ -563,8 +576,8 @@ adonis.141518
 *Diversity Metrics-- Richness, Shannon, Simpson's D*
 ```{r Diversity Metrics - Plant, echo= TRUE}
 #CALCULATE PLANT RICHNESS
-rownames(plant) = plant$sample
-plant_sub <- plant[,-c(1)]
+rownames(plant_M_MF_sort) = plant$sample
+plant_sub <- plant_M_MF_sort[,-c(1:3)]
 
 #TRANSFORM DATA TO 0/1 (ABSENCE/PRESENCE)
 plant_PA <- decostand(plant_sub, method = "pa", na.rm=TRUE)
