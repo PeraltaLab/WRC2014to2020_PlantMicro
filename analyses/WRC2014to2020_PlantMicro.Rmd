@@ -13,7 +13,7 @@ header-includes:
 - \usepackage[utf8]{inputenc}
 ---
 
-Project Description: Fill out
+Project Description: Long-term nutrient enrichment and hydrology interact to modify plant-microbe interactions and community structures in a wetland ecosystem. 
 
 ------------------------------------------------------------------------------------------------------------------
 
@@ -51,6 +51,8 @@ setwd("~/GitHub/WRC2014to2020_PlantMicro/analyses") #sets working directory
 #install.packages("readr")
 #install.packages("data.table")
 #install.packages("phyloseq")
+#install.packages("glmmTMB")
+#install.packages("TMB")
 #install.packages("BiocManager")
 #BiocManager::install("phyloseq")
 #source("https://raw.githubusercontent.com/joey711/phyloseq/master/inst/scripts/installer.R", local = TRUE)
@@ -76,6 +78,7 @@ require("lme4")
 require("agricolae")
 require("car")
 require("ade4")
+require("glmmTMB")
 ```
 ---------------------------------------------------------------------------------------------------------------------
 # Import RAW Plant Data and Calculate Importance Values
@@ -172,7 +175,7 @@ for(i in 1:dim(otu_rare)[1]){
 otu_rel[i,] <- otu_rare[i,]/sum(otu_rare[i,])
 }
 ```
--------------------------------------------------------------------------------------------------------
+------------------------------------------------------------------------------------------------------
 *ADD DIVERSITY METRICS TO bac_design*
 ```{r Create dataframe - Bacteria, include = FALSE}
 #Renamed soil properties and design file
@@ -315,7 +318,7 @@ c_percent
 #Save plot 
 ggsave("../figures/c_percent.png", plot=c_percent, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
 
-#another visual
+#Another visual of c_percent
 ggplot(bac_design, aes(treatment, c_percent)) +
   geom_point()+
   facet_wrap(~ditch + year)
@@ -383,48 +386,50 @@ pcoa.centroids.sd <- acast(pcoa.L.centroids, variable ~ group, sd)
 
 
 # Combine
-pcoa.cent.dataframe <- cbind(t(pcoa.centroids), t(pcoa.centroids.se))
-colnames(pcoa.cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
-pcoa.cent.treats <- rownames(pcoa.cent.dataframe)
-pcoa.col <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 2)) # treatment
-pcoa.shape <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 1))  # source
-pcoa.size <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 3))
-levels(pcoa.col) <- c("Control","Fertilized","Mowed","Mowed-Fert")
+#pcoa.cent.dataframe <- cbind(t(pcoa.centroids), t(pcoa.centroids.se))
+#colnames(pcoa.cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
+#pcoa.cent.treats <- rownames(pcoa.cent.dataframe)
+#pcoa.col <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 2)) # treatment
+#pcoa.shape <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 1))  # source
+#pcoa.size <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 3))
+#levels(pcoa.col) <- c("Control","Fertilized","Mowed","Mowed-Fert")
 
-df1a <- as.data.frame(pcoa.cent.dataframe)
-plot1 <- ggplot(df1a, aes(x=V1, y=V2), group = interaction(pcoa.col, pcoa.shape, pcoa.size)) +
-theme_bw() +
-geom_point(aes(shape = pcoa.shape, colour = pcoa.col, size = pcoa.size), stroke = 2) +
+#df1a <- as.data.frame(pcoa.cent.dataframe)
+#plot1 <- ggplot(df1a, aes(x=V1, y=V2), group = interaction(pcoa.col, pcoa.shape, pcoa.size)) +
+#theme_bw() +
+#geom_point(aes(shape = pcoa.shape, colour = pcoa.col, size = pcoa.size), stroke = 2) +
 #geom_point(aes(colour=pcoa.col2), size =4.0)+
 #removes gridlines from plot
-theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-axis.line = element_line(colour = "black"))+
+#theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+#axis.line = element_line(colour = "black"))+
 #Set error barrs for geom_point+
-geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
+#geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
-scale_colour_manual(values = c("tan2", "plum1","gray70","darkgreen")) +
-scale_shape_manual(values = c(16,22,15)) +
-  scale_size_manual(values = c(0.5,5,10)) +
+#scale_colour_manual(values = c("tan2", "plum1","gray70","darkgreen")) +
+#scale_shape_manual(values = c(16,22,15)) +
+ # scale_size_manual(values = c(0.5,5,10)) +
 #Sets map coordinates
-coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
+#coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
 #Sets axis text and put border around plot
-theme(axis.title = element_text(size=14),# face="bold"),
-axis.text.x = element_text(size=14, color="black"),  axis.text.y = element_text(size=14, color="black"),
-panel.border = element_rect(colour = "black", size=1.25)) +
+#theme(axis.title = element_text(size=14),# face="bold"),
+#axis.text.x = element_text(size=14, color="black"),  axis.text.y = element_text(size=14, color="black"),
+#panel.border = element_rect(colour = "black", size=1.25)) +
 #Set plot title textsize
-theme(plot.title=element_text(size=14)) +
+#theme(plot.title=element_text(size=14)) +
 #Set legend text size
-theme(legend.text=element_text(size=14, face="bold"), legend.title = element_text(size=14, face="bold"))+
+#theme(legend.text=element_text(size=14, face="bold"), legend.title = element_text(size=14, face="bold"))+
 #Sets size of tick marks on axis
-theme(axis.ticks.length=unit(0.3,"cm")) +
+#theme(axis.ticks.length=unit(0.3,"cm")) +
 #Sets labels for plot title, axis titles, and legend headings
-xlab("PCoA 1 (18.5%)") + ylab("PCoA 2 (12.5%)") +
-labs(shape = "Ditch") +
-labs(colour="Treatment") +
-ggtitle("Bacterial 16S rRNA Community Composition")+
-theme(legend.position="right")
+#xlab("PCoA 1 (18.5%)") + ylab("PCoA 2 (12.5%)") +
+#labs(shape = "Ditch") +
+#labs(colour="Treatment") +
+#ggtitle("Bacterial 16S rRNA Community Composition")+
+#theme(legend.position="right")
 
-plot1
+#plot1
+#Error: Aesthetics must be either length 1 or the same as the data (24): shape, colour and size
+
 
 #ONLY MOWED AND MOWED-FERTILIZED
 explainvar1a <- round(bc_dist_pcoa$eig[1] / sum(bc_dist_pcoa$eig), 3) * 100
@@ -506,7 +511,6 @@ ggsave("../figures/bc_PCoA_plot2.png", plot=plot2, device=NULL, path=NULL, scale
 #UPDATE ACCORDING TO MODELS USED IN GOODWILLIE ET AL. 2020 PAPER
 *Statistics* 
 ```{r anova and perMANOVA - Bacteria - All treatments, echo= TRUE}
-#ALL TREATMENTS
 
 #FROM GOODWILLIE PAPER
 b1=glmmTMB(totalbiomass~Year*Treatment*Ditch+
@@ -522,6 +526,7 @@ alphae
 plot(alphae)
 summary(b1)
 
+#ALL TREATMENTS(Mowed/Unfertilized, Mowed/Fertilized, Unmowed/Unfertilized, Unmowed, Fertilized)
 
 #Nitrogen content 
 n_percent_aov <- aov(n_percent ~ fertilization*mowing*ditch*year, data = bc_diversity)
@@ -538,8 +543,8 @@ anova(pH_aov)
 #Bacterial community composition
 
 #RICHNESS 
-bcrichnessy_aov <- aov(bc_richness ~ fertilization*mowing*ditch*year, data = bc_diversity)
-anova(bccommunity_aov)
+bcrichness_aov <- aov(bc_richness ~ fertilization*mowing*ditch*year, data = bc_diversity)
+anova(bcrichness_aov)
 
 #SHANNON
 bcshannon_aov <- aov(bc_shannon ~ fertilization*mowing*ditch*year, data = bc_diversity)
@@ -549,33 +554,35 @@ anova(bcshannon_aov)
 bcinvsimp_aov <- aov(bc_invsimp ~ fertilization*mowing*ditch*year, data = bc_diversity)
 anova(bcinvsimp_aov)
 
-#MOWED AND MOWED/FERT ONLY
+
+#MOWED AND MOWED/FERT ONLY--Removed Mowing variable
+bc_diversity_M_Mf <- bc_diversity[bc_diversity$treatment %in% c("M", "MF"),] 
 
 #Nitrogen content 
-n_percent_aov <- aov(n_percent ~ fertilization*mowing*ditch*year, data = M_Mf)
+n_percent_aov <- aov(n_percent ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
 anova(n_percent_aov)
 
 #Carbon content 
-c_percent_aov <- aov(log(c_percent) ~ fertilization*mowing*ditch*year, data = M_Mf)
- anova(c_percent_aov)
+c_percent_aov <- aov(log(c_percent) ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
+anova(c_percent_aov)
 
 #pH
-pH_aov <- aov(pH ~ fertilization*mowing*ditch*year, data = M_Mf)
+pH_aov <- aov(pH ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
 anova(pH_aov)
 
 #Bacterial community composition
 
 #RICHNESS 
-bccommunity_aov <- aov(bc_richness ~ fertilization*mowing*ditch*year, data = M_Mf)
-anova(bccommunity_aov)
+bcrichnessMMF_aov <- aov(bc_richness ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
+anova(bcrichnessMMF_aov)
 
 #SHANNON
-bcshannon_aov <- aov(bc_shannon ~ fertilization*mowing*ditch*year, data = M_Mf)
-anova(bcshannon_aov)
+bcshannonMMF_aov <- aov(bc_shannon ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
+anova(bcshannonMMF_aov)
 
 #INVSIMP
-bcinvsimp_aov <- aov(bc_invsimp ~ fertilization*mowing*ditch*year, data = M_Mf)
-anova(bcinvsimp_aov)
+bcinvsimpMMF_aov <- aov(bc_invsimp ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
+anova(bcinvsimpMMF_aov)
 
 #PERMANOVA -- ALL TREATMENTS
 design_bac2 <- cbind(bc_diversity, otu_rel)
@@ -589,15 +596,14 @@ adonis.all <- adonis(design_bac2[,-c(1:18)] ~ fertilization*ditch*year*mowing, m
 
 adonis.all
 
-#PERMANOVA -- MOWED/UNFERTILIZED AND MOWED/FERTILIZED
-#design_bac2 <- cbind(bc_diversity, otu_rel)
+#PERMANOVA -- MOWED/UNFERTILIZED AND MOWED/FERTILIZED--Removed mowing variable
 
 design_bac3 <- subset(design_bac2, treatment == "M" | treatment == "MF")
 
 # Convert integers to characters
-design_bac1$fertilization <- as.factor(design_bac1$fertilization)
-design_bac1$mowing <- as.factor(design_bac1$mowing)
-design_bac1$year <- as.factor(design_bac1$year)
+design_bac3$fertilization <- as.factor(design_bac3$fertilization)
+design_bac3$mowing <- as.factor(design_bac3$mowing)
+design_bac3$year <- as.factor(design_bac3$year)
 
 adonis.M_MF <- adonis(design_bac3[,-c(1:18)] ~ fertilization*ditch*year, method = "bray", data = design_bac3, perm=1000, set.seed=42)
 adonis.M_MF
@@ -700,7 +706,7 @@ theme_bw() +
 plant_invsimp
 
 #Save plot 
-ggsave("../figures/plant_evenness.png", plot=plant_shannon, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
+ggsave("../figures/plant_evenness.png", plot=plant_invsimp, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
 ```
 *CALCULATE DISTANCE MATRIX AND PCoA COMPONENTS*
 ```{r Ordination (PCoA)- Plant, include= FALSE}
@@ -784,7 +790,22 @@ plant.adonis.M_MF <- adonis(plant_M_MF_sort[,-c(1:9)] ~ fertilizer*ditch*year, m
 plant.adonis.M_MF
 
 ```
+*Statistics* 
+```{r anova and perMANOVA - Plants - All treatments, echo= TRUE}
+#Plant community composition
 
+#RICHNESS 
+plantrichnessMMF_aov <- aov(plant_richness ~ fertilizer*ditch*year, data = plant_diversity)
+anova(plantrichnessMMF_aov)
+
+#SHANNON
+plantshannonMMF_aov <- aov(plant_shannon ~ fertilizer*ditch*year, data = plant_diversity)
+anova(plantshannonMMF_aov)
+
+#INVSIMP
+plantinvsimpMMF_aov <- aov(plant_invsimp ~ fertilizer*ditch*year, data = plant_diversity)
+anova(plantinvsimpMMF_aov)
+```
 
 
 
