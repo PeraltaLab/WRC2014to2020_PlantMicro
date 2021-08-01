@@ -386,49 +386,49 @@ pcoa.centroids.sd <- acast(pcoa.L.centroids, variable ~ group, sd)
 
 
 # Combine
-#pcoa.cent.dataframe <- cbind(t(pcoa.centroids), t(pcoa.centroids.se))
-#colnames(pcoa.cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
-#pcoa.cent.treats <- rownames(pcoa.cent.dataframe)
-#pcoa.col <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 2)) # treatment
-#pcoa.shape <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 1))  # source
-#pcoa.size <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 3))
-#levels(pcoa.col) <- c("Control","Fertilized","Mowed","Mowed-Fert")
+pcoa.cent.dataframe <- cbind(t(pcoa.centroids), t(pcoa.centroids.se))
+colnames(pcoa.cent.dataframe) <- c("V1", "V2", "V1e", "V2e")
+pcoa.cent.treats <- rownames(pcoa.cent.dataframe)
+pcoa.col <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 2)) # treatment
+pcoa.shape <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 1))  # source
+pcoa.size <- as.factor(sapply(strsplit(pcoa.cent.treats, "_"), `[`, 3))
+levels(pcoa.col) <- c("Control","Fertilized","Mowed","Mowed-Fert")
 
-#df1a <- as.data.frame(pcoa.cent.dataframe)
-#plot1 <- ggplot(df1a, aes(x=V1, y=V2), group = interaction(pcoa.col, pcoa.shape, pcoa.size)) +
-#theme_bw() +
-#geom_point(aes(shape = pcoa.shape, colour = pcoa.col, size = pcoa.size), stroke = 2) +
+df1a <- as.data.frame(pcoa.cent.dataframe)
+plot1 <- ggplot(df1a, aes(x=V1, y=V2), group = interaction(pcoa.col, pcoa.shape, pcoa.size))+
+theme_bw() +
+geom_point(aes(shape = pcoa.shape, colour = pcoa.col, size = pcoa.size), stroke = 2) +
 #geom_point(aes(colour=pcoa.col2), size =4.0)+
 #removes gridlines from plot
-#theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-#axis.line = element_line(colour = "black"))+
-#Set error barrs for geom_point+
-#geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
+theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+axis.line = element_line(colour = "black"))+
+#Set error barrs for geom_point
+geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
-#scale_colour_manual(values = c("tan2", "plum1","gray70","darkgreen")) +
-#scale_shape_manual(values = c(16,22,15)) +
- # scale_size_manual(values = c(0.5,5,10)) +
+scale_colour_manual(values = c("tan2", "plum1","gray70","darkgreen")) +
+scale_shape_manual(values = c(16,22,15)) +
+scale_size_manual(values = c(0.5,5,10)) +
 #Sets map coordinates
-#coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
+coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
 #Sets axis text and put border around plot
-#theme(axis.title = element_text(size=14),# face="bold"),
-#axis.text.x = element_text(size=14, color="black"),  axis.text.y = element_text(size=14, color="black"),
-#panel.border = element_rect(colour = "black", size=1.25)) +
+theme(axis.title = element_text(size=14),# face="bold"),
+axis.text.x = element_text(size=14, color="black"),  axis.text.y = element_text(size=14, color="black"),
+panel.border = element_rect(colour = "black", size=1.25)) +
 #Set plot title textsize
-#theme(plot.title=element_text(size=14)) +
+theme(plot.title=element_text(size=14)) +
 #Set legend text size
-#theme(legend.text=element_text(size=14, face="bold"), legend.title = element_text(size=14, face="bold"))+
+theme(legend.text=element_text(size=14, face="bold"), legend.title = element_text(size=14, face="bold"))+
 #Sets size of tick marks on axis
-#theme(axis.ticks.length=unit(0.3,"cm")) +
+theme(axis.ticks.length=unit(0.3,"cm")) +
 #Sets labels for plot title, axis titles, and legend headings
-#xlab("PCoA 1 (18.5%)") + ylab("PCoA 2 (12.5%)") +
-#labs(shape = "Ditch") +
-#labs(colour="Treatment") +
-#ggtitle("Bacterial 16S rRNA Community Composition")+
-#theme(legend.position="right")
+xlab("PCoA 1 (18.5%)") + ylab("PCoA 2 (12.5%)") +
+labs(shape = "Ditch") +
+labs(colour="Treatment") +
+ggtitle("Bacterial 16S rRNA Community Composition")+
+theme(legend.position="right")
+#View plot for all treatments
+plot1
 
-#plot1
-#Error: Aesthetics must be either length 1 or the same as the data (24): shape, colour and size
 
 
 #ONLY MOWED AND MOWED-FERTILIZED
@@ -470,14 +470,14 @@ levels(pcoa.col) <- c("Mowed/Unfertilized","Mowed/Fertilized")
 
 
 df1a <- as.data.frame(pcoa.cent.dataframe)
-plot2 <- ggplot(df1a, aes(x=V1, y=V2), group = interaction(pcoa.col, pcoa.shape, pcoa.size)) +
+plot2 <- ggplot(df1a, aes(x=V1, y=V2), group = interaction(pcoa.col, pcoa.shape, pcoa.size))+
 theme_bw() +
 geom_point(aes(shape = pcoa.shape, colour = pcoa.col, size = pcoa.size), stroke = 2) +
 #geom_point(aes(colour=pcoa.col2), size =4.0)+
 #removes gridlines from plot
 theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
 axis.line = element_line(colour = "black"))+
-#Set error barrs for geom_point+
+#Set error barrs for geom_point
 geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + 
   geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
