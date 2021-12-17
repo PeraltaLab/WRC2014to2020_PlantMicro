@@ -26,6 +26,8 @@ This repository contains open-source code, data, & text files.
 
 * **Aim 2.)**: How does the fertilization and hydrology affect the relationship between plant and bacterial community composition change over time?
 
+* **Aim 3.)**: How does the soil physico-chemical properties change over time?
+
 ### Repository Contents
 
 * **analyses:** An R Markdown file (WRCforManuscript.Rmd) that includes R script written by Daniya Stephens and Jasper Leavitt containing functions used in analysis of soil and microbial sequence data.
@@ -69,7 +71,7 @@ require("ggplot2")
 require("reshape2")
 require("phyloseq")
 
-# Code Dependencies
+#Code Dependencies
 source("../bin/DiversityFunctions.R")
 source("../bin/MothurTools.R")
 
@@ -109,15 +111,17 @@ write.csv(WRC_dat, file="../data/WRC_Importance.csv")
 *READ IN THE PLANT FILE (subset 2015, 2018) AND EXP DESIGN* 
 ```{r Import Files - Plants, include = FALSE}
 file_path <- ("../data/WRC_Importance.csv") 
-plant <- read.csv(file_path, header=TRUE)
+plant <- read.csv(file_path, header=TRUE) #Missing 2014, 2019, 2020 from data set
 
 plant$fertilizer <- as.factor(plant$fertilizer)
 plant$mowing <- as.factor(plant$mowing)
 plant$ditch <- as.factor(plant$ditch)
 str(plant)
 
+#plant_15161718 <- subset(plant, year=="2015" | year=="2016" | year=="2017" | year=="2018" )
 plant_1518 <- subset(plant, year=="2015" | year=="2018")
 plant_M_MF <- subset(plant_1518, treatment == "M" | treatment == "MF")
+#plant_M_MF <- subset(plant_15161718, treatment == "M" | treatment == "MF")
 
 plant_M_MF_sort <- 
   plant_M_MF %>%
@@ -126,6 +130,7 @@ plant_M_MF_sort <-
 
 *READ SOIL AND DESIGN FILE*
 ```{r Import Files - Soil Properties, include = FALSE }
+#file_path <- ("../data/WRC_2014to2020_design.csv")
 file_path <- ("../data/WRC_2014_2015_2018_design_env.csv") 
 soil_design <- read.csv(file_path)
 

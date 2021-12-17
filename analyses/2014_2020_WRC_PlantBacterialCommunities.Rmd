@@ -33,7 +33,8 @@ require("dplyr"); require("reshape2"); require("picante"); require("phyloseq")
 ## Environmental Data
 ```{r Import Files - Env, include=FALSE}
 # Import Environmental Data
-design <- read.csv("../data/WRC_2014_2015_2018_design_env.csv", row.names=1) #update with 2014-2020 when available
+#design <- read.csv("..data/WRC_2014to2020_design.csv") #2014-2020 data
+design <- read.csv("../data/WRC_2014_2015_2018_design_env.csv", row.names=1) 
 ```
 ## Bacterial Data - including bulk and tea
 ```{r Import Files - Bacteria, include=FALSE}
