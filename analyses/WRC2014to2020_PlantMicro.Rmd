@@ -108,7 +108,7 @@ head(WRC_dat)
 write.csv(WRC_dat, file="../data/WRC_Importance.csv")
 ```
 
-*READ IN THE PLANT FILE (subset 2015, 2018) AND EXP DESIGN* 
+*READ IN THE PLANT FILE (subset 2014 to 2020) AND EXP DESIGN* 
 ```{r Import Files - Plants, include = FALSE}
 file_path <- ("../data/WRC_Importance.csv") 
 plant <- read.csv(file_path, header=TRUE) #Missing 2014, 2019, 2020 from data set
@@ -152,12 +152,12 @@ soil_design_M_MF_sort <-
 ```{r Import Files - Bacteria, include= FALSE}
 #READ IN OTU FILE
 
-otu_file <-("../data/WRC141518.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.opti_mcc.shared")
+otu_file <-("../data/WRC2014to2020.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.shared")
 otu <- read.otu(otu_file)
 
 #READ IN TAXONOMY FILE
 
-tax_file <- ("../data/WRC141518.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.opti_mcc.0.03.cons.taxonomy")
+tax_file <- ("../data/WRC2014to2020.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy")
 tax <- import_mothur(mothur_constaxonomy_file =  tax_file)
 colnames(tax)=c("Domain","Phylum","Class", "Order","Family","Genus")
 tax_df <- as.data.frame(tax)
@@ -187,7 +187,7 @@ otu_rel[i,] <- otu_rare[i,]/sum(otu_rare[i,])
 bac_design <- soil_design
 
 #TRANSFORM BACTERIA DATA TO PRESENCE/ABCENSE
-bc_PA <- decostand(otu_rare, method = "pa", na.rm=TRUE) 
+bc_PA <- decostand(otu_rare, method = "pa", na.rm=TRUE) #Missing WRC17_129
 
 #Bacterial richness = NUMBER OF PRESENCE (1)
 bc_richness <- specnumber(bc_PA) 
@@ -206,6 +206,12 @@ bc_diversity <- cbind(bac_design, bc_richness)
 bc_diversity <- cbind(bc_diversity, bc_shannon)
 bc_diversity <- cbind(bc_diversity, bc_invsimp)
 str(bc_diversity)
+
+#Added new column
+bc_diversity$pH_avg = NA
+#Calculate AVG pH 
+bc_diversity$pH_avg = rowMeans(bc_diversity[,c(8:10)])
+bc_diversity
 ```
 *Diversity Metrics-- Richness, Shannon, Simpsons D*
 ```{r Diversity Metrics - Bacteria, echo = TRUE}
@@ -279,8 +285,14 @@ ggsave("../figures/bc_evenness.png", plot=simp_even, device=NULL, path=NULL, sca
 ```
 *Soil physicochemical properties*
 ```{r Plot - pH, carbon percent, nitrogen percent, echo= TRUE}
-#pH
-p_pH <- ggplot(M_Mf, aes(x=treatment, y=pH, color=as.factor(treatment)))+ geom_boxplot() +
+#Added new column
+M_Mf$pH_avg = NA
+#Calculate AVG pH 
+M_Mf$pH_avg = rowMeans(M_Mf[,c(8:10)])
+M_Mf
+
+#pH-- Need to calculate the avg and use that number
+p_pH <- ggplot(M_Mf, aes(x=treatment, y=pH_avg, color=as.factor(treatment)))+ geom_boxplot() +
 geom_point(aes(color=factor(treatment), shape=ditch), size=2, position = position_jitterdodge()) + scale_color_manual(name="treatment", values=c("gray70", "darkgreen"), labels = c("Mowed/Unfertilized", "Mowed/Fertilized"))+
 xlab("Treatment")+
 ylab("Soil pH")+
@@ -323,12 +335,6 @@ c_percent
 #Save plot 
 ggsave("../figures/c_percent.png", plot=c_percent, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
 
-#Another visual of c_percent
-ggplot(bac_design, aes(treatment, c_percent)) +
-  geom_point()+
-  facet_wrap(~ditch + year)
-
-
 #n percent 
 n_percent <- ggplot(M_Mf, aes(x=treatment, y=n_percent, color=as.factor(treatment)))+ geom_boxplot() +
 geom_point(aes(color=factor(treatment), shape=ditch), size=2, position = position_jitterdodge()) + scale_color_manual(name="treatment", values=c("gray70", "darkgreen"), labels = c("Mowed/Unfertilized", "Mowed/Fertilized"))+
@@ -366,8 +372,8 @@ bc_dist_pcoa <- cmdscale(bc_dist, k=3, eig=TRUE, add=FALSE)
 explainvar1a <- round(bc_dist_pcoa$eig[1] / sum(bc_dist_pcoa$eig), 3) * 100
 explainvar2a <- round(bc_dist_pcoa$eig[2] / sum(bc_dist_pcoa$eig), 3) * 100
 sum.eiga <- sum(explainvar1a, explainvar2a)
-explainvar1a #(18.5%)
-explainvar2a #(12.5%)
+explainvar1a #(18.5%) #NEW DATA SHOWS 3.1%
+explainvar2a #(12.5%) #NEW DATA SHOWS 2.7%
 pcoa.groups <- paste(bac_design$ditch, bac_design$treatment, sep = "_") #These are factors from the design file.
 pcoa.points <- data.frame(bc_dist_pcoa$points, group = pcoa.groups)  #df set in above chunk
 
@@ -486,7 +492,7 @@ axis.line = element_line(colour = "black"))+
 geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + 
   geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
-scale_colour_manual(values = c("gray70","darkgreen")) +
+scale_colour_manual(values = c("gray70","darkgreen","gray70","darkgreen")) +
 scale_shape_manual(values = c(16,22,15)) +
   scale_size_manual(values = c(0.5,5,10)) +
 #Sets map coordinates
@@ -542,7 +548,7 @@ c_percent_aov <- aov(log(c_percent) ~ fertilization*mowing*ditch*year, data = bc
  anova(c_percent_aov)
 
 #pH
-pH_aov <- aov(pH ~ fertilization*mowing*ditch*year, data = bc_diversity)
+pH_aov <- aov(pH_avg ~ fertilization*mowing*ditch*year, data = bc_diversity)
 anova(pH_aov)
 
 #Bacterial community composition
@@ -572,7 +578,7 @@ c_percent_aov <- aov(log(c_percent) ~ fertilization*ditch*year, data = bc_divers
 anova(c_percent_aov)
 
 #pH
-pH_aov <- aov(pH ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
+pH_aov <- aov(pH_avg ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
 anova(pH_aov)
 
 #Bacterial community composition
