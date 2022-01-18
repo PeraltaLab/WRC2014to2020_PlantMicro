@@ -89,7 +89,7 @@ For analysis, percent cover data is combined with stem counts to calculate an im
 WRC <- read.csv("../data/Plant_WRC_all.csv")
 head(WRC)
 str(WRC)
-#WRC$SUM<-rowSums(WRC[,-1:-8])
+WRC$SUM<-rowSums(WRC[,-1:-8])
 
 WRC_norm <- WRC
 for(i in 1:nrow(WRC)){
@@ -105,12 +105,12 @@ imp_values<-cover[,9:89]+stem[,9:89]
 WRC_dat<-data.frame(cover[,1:8],imp_values)
 head(WRC_dat)
 
-write.csv(WRC_dat, file="../data/WRC_Importance.csv")
+write.csv(WRC_dat, file="../data/WRC_Importance.csv"
 ```
 
 *READ IN THE PLANT FILE (subset 2014 to 2020) AND EXP DESIGN* 
 ```{r Import Files - Plants, include = FALSE}
-file_path <- ("../data/WRC_Importance.csv") 
+file_path <- "../data/WRC_Importance.csv"
 plant <- read.csv(file_path, header=TRUE) #Missing 2014, 2019, 2020 from data set
 
 plant$fertilizer <- as.factor(plant$fertilizer)
@@ -372,8 +372,8 @@ bc_dist_pcoa <- cmdscale(bc_dist, k=3, eig=TRUE, add=FALSE)
 explainvar1a <- round(bc_dist_pcoa$eig[1] / sum(bc_dist_pcoa$eig), 3) * 100
 explainvar2a <- round(bc_dist_pcoa$eig[2] / sum(bc_dist_pcoa$eig), 3) * 100
 sum.eiga <- sum(explainvar1a, explainvar2a)
-explainvar1a #(18.5%) #NEW DATA SHOWS 3.1%
-explainvar2a #(12.5%) #NEW DATA SHOWS 2.7%
+explainvar1a #(18.5%) #NEW DATA SHOWS 5.2%
+explainvar2a #(12.5%) #NEW DATA SHOWS 4%
 pcoa.groups <- paste(bac_design$ditch, bac_design$treatment, sep = "_") #These are factors from the design file.
 pcoa.points <- data.frame(bc_dist_pcoa$points, group = pcoa.groups)  #df set in above chunk
 
@@ -493,8 +493,8 @@ geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") +
   geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
 scale_colour_manual(values = c("gray70","darkgreen","gray70","darkgreen")) +
-scale_shape_manual(values = c(16,22,15)) +
-  scale_size_manual(values = c(0.5,5,10)) +
+scale_shape_manual(values = c(0.10,0.25,1,5,10,15,20)) +
+  scale_size_manual(values = c(0.5,1,5,10,15,20,25)) +
 #Sets map coordinates
 coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
 #Sets axis text and put border around plot
@@ -514,7 +514,7 @@ labs(colour="Treatment") +
 ggtitle("Bacterial 16S rRNA Community Composition")+
 theme(legend.position="right")
 
-plot2
+plot2 #Line 496/497 need to choose appropriate sizes for the years and data points
 
 #Save plot 
 ggsave("../figures/bc_PCoA_plot2.png", plot=plot2, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
@@ -670,6 +670,8 @@ theme_bw() +
           fill="white", size=1))
 plant_rich
 
+#Over the years 2015,2016,2017, 2018 plant species richness declined when fertilization was introduced. Soil moisture shown by the circles (wet plots) or triangles (dry plots) seems to play a less significant role compared to treatment in plant species richness.
+
 #Save plot 
 ggsave("../figures/plant_richness.png", plot=plant_rich, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
 
@@ -731,8 +733,8 @@ plant_dist_pcoa <- cmdscale(plant_dist, k=3, eig=TRUE, add=FALSE)
 explainvar1a <- round(plant_dist_pcoa$eig[1] / sum(plant_dist_pcoa$eig), 3) * 100
 explainvar2a <- round(plant_dist_pcoa$eig[2] / sum(plant_dist_pcoa$eig), 3) * 100
 sum.eiga <- sum(explainvar1a, explainvar2a)
-explainvar1a #27.4%
-explainvar2a #14.3%
+explainvar1a #29.4%
+explainvar2a #13.8%
 pcoa.groups <- paste(plant_M_MF_sort$ditch, plant_M_MF_sort$treatment, plant_M_MF_sort$year, sep = "_") #These are factors from the design file.
 pcoa.points <- data.frame(plant_dist_pcoa$points, group = pcoa.groups)  #df set in above chunk
 
@@ -771,8 +773,8 @@ geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") +
   geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
 scale_colour_manual(values = c("gray70","darkgreen")) +
-scale_shape_manual(values = c(16,22,15)) +
-  scale_size_manual(values = c(0.5,5,10)) +
+scale_shape_manual(values = c(20,0,15,16)) +
+  scale_size_manual(values = c(0.50,5,10,15)) +
 #Sets map coordinates
 coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
 #Sets axis text and put border around plot
@@ -786,13 +788,14 @@ theme(legend.text=element_text(size=14, face="bold"), legend.title = element_tex
 #Sets size of tick marks on axis
 theme(axis.ticks.length=unit(0.3,"cm")) +
 #Sets labels for plot title, axis titles, and legend headings
-xlab("PCoA 1 (27.4%)") + ylab("PCoA 2 (14.3%)") +
+xlab("PCoA 1 (29.4%)") + ylab("PCoA 2 (13.8%)") +
 labs(shape = "Ditch") +
 labs(colour="Treatment") +
 ggtitle("Plant Community Composition")+
 theme(legend.position="right")
 
 plot2
+#Fertilized (green) plots clustered together meaning their community composition is most similar compared to the Unfertilized (grey) plots. Soil moisture (ditch effect) also played a role in how plant communities developed. Drier fertilized communities are more related to one another than drier unfertilized plots
 
 #Save plot 
 ggsave("../figures/plant_PCoA_plot.png", plot=plot2, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
