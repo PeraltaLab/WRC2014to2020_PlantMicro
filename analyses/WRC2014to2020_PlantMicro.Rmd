@@ -26,6 +26,8 @@ This repository contains open-source code, data, & text files.
 
 * **Aim 2.)**: How does the fertilization and hydrology affect the relationship between plant and bacterial community composition change over time?
 
+* **Aim 3.)**: How does the soil physico-chemical properties change over time?
+
 ### Repository Contents
 
 * **analyses:** An R Markdown file (WRCforManuscript.Rmd) that includes R script written by Daniya Stephens and Jasper Leavitt containing functions used in analysis of soil and microbial sequence data.
@@ -69,7 +71,7 @@ require("ggplot2")
 require("reshape2")
 require("phyloseq")
 
-# Code Dependencies
+#Code Dependencies
 source("../bin/DiversityFunctions.R")
 source("../bin/MothurTools.R")
 
@@ -87,7 +89,7 @@ For analysis, percent cover data is combined with stem counts to calculate an im
 WRC <- read.csv("../data/Plant_WRC_all.csv")
 head(WRC)
 str(WRC)
-#WRC$SUM<-rowSums(WRC[,-1:-8])
+WRC$SUM<-rowSums(WRC[,-1:-8])
 
 WRC_norm <- WRC
 for(i in 1:nrow(WRC)){
@@ -103,21 +105,23 @@ imp_values<-cover[,9:89]+stem[,9:89]
 WRC_dat<-data.frame(cover[,1:8],imp_values)
 head(WRC_dat)
 
-write.csv(WRC_dat, file="../data/WRC_Importance.csv")
+write.csv(WRC_dat, file="../data/WRC_Importance.csv"
 ```
 
-*READ IN THE PLANT FILE (subset 2015, 2018) AND EXP DESIGN* 
+*READ IN THE PLANT FILE (subset 2014 to 2020) AND EXP DESIGN* 
 ```{r Import Files - Plants, include = FALSE}
-file_path <- ("../data/WRC_Importance.csv") 
-plant <- read.csv(file_path, header=TRUE)
+file_path <- "../data/WRC_Importance.csv"
+plant <- read.csv(file_path, header=TRUE) #Missing 2014, 2019, 2020 from data set
 
 plant$fertilizer <- as.factor(plant$fertilizer)
 plant$mowing <- as.factor(plant$mowing)
 plant$ditch <- as.factor(plant$ditch)
 str(plant)
 
+#plant_15161718 <- subset(plant, year=="2015" | year=="2016" | year=="2017" | year=="2018" )
 plant_1518 <- subset(plant, year=="2015" | year=="2018")
 plant_M_MF <- subset(plant_1518, treatment == "M" | treatment == "MF")
+#plant_M_MF <- subset(plant_15161718, treatment == "M" | treatment == "MF")
 
 plant_M_MF_sort <- 
   plant_M_MF %>%
@@ -126,6 +130,7 @@ plant_M_MF_sort <-
 
 *READ SOIL AND DESIGN FILE*
 ```{r Import Files - Soil Properties, include = FALSE }
+#file_path <- ("../data/WRC_2014to2020_design.csv")
 file_path <- ("../data/WRC_2014_2015_2018_design_env.csv") 
 soil_design <- read.csv(file_path)
 
@@ -147,12 +152,12 @@ soil_design_M_MF_sort <-
 ```{r Import Files - Bacteria, include= FALSE}
 #READ IN OTU FILE
 
-otu_file <-("../data/WRC141518.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.opti_mcc.shared")
+otu_file <-("../data/WRC2014to2020.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.shared")
 otu <- read.otu(otu_file)
 
 #READ IN TAXONOMY FILE
 
-tax_file <- ("../data/WRC141518.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.pick.opti_mcc.0.03.cons.taxonomy")
+tax_file <- ("../data/WRC2014to2020.trim.contigs.good.unique.good.filter.unique.precluster.pick.pick.opti_mcc.0.03.cons.taxonomy")
 tax <- import_mothur(mothur_constaxonomy_file =  tax_file)
 colnames(tax)=c("Domain","Phylum","Class", "Order","Family","Genus")
 tax_df <- as.data.frame(tax)
@@ -182,7 +187,7 @@ otu_rel[i,] <- otu_rare[i,]/sum(otu_rare[i,])
 bac_design <- soil_design
 
 #TRANSFORM BACTERIA DATA TO PRESENCE/ABCENSE
-bc_PA <- decostand(otu_rare, method = "pa", na.rm=TRUE) 
+bc_PA <- decostand(otu_rare, method = "pa", na.rm=TRUE) #Missing WRC17_129
 
 #Bacterial richness = NUMBER OF PRESENCE (1)
 bc_richness <- specnumber(bc_PA) 
@@ -201,6 +206,12 @@ bc_diversity <- cbind(bac_design, bc_richness)
 bc_diversity <- cbind(bc_diversity, bc_shannon)
 bc_diversity <- cbind(bc_diversity, bc_invsimp)
 str(bc_diversity)
+
+#Added new column
+bc_diversity$pH_avg = NA
+#Calculate AVG pH 
+bc_diversity$pH_avg = rowMeans(bc_diversity[,c(8:10)])
+bc_diversity
 ```
 *Diversity Metrics-- Richness, Shannon, Simpsons D*
 ```{r Diversity Metrics - Bacteria, echo = TRUE}
@@ -274,8 +285,14 @@ ggsave("../figures/bc_evenness.png", plot=simp_even, device=NULL, path=NULL, sca
 ```
 *Soil physicochemical properties*
 ```{r Plot - pH, carbon percent, nitrogen percent, echo= TRUE}
-#pH
-p_pH <- ggplot(M_Mf, aes(x=treatment, y=pH, color=as.factor(treatment)))+ geom_boxplot() +
+#Added new column
+M_Mf$pH_avg = NA
+#Calculate AVG pH 
+M_Mf$pH_avg = rowMeans(M_Mf[,c(8:10)])
+M_Mf
+
+#pH-- Need to calculate the avg and use that number
+p_pH <- ggplot(M_Mf, aes(x=treatment, y=pH_avg, color=as.factor(treatment)))+ geom_boxplot() +
 geom_point(aes(color=factor(treatment), shape=ditch), size=2, position = position_jitterdodge()) + scale_color_manual(name="treatment", values=c("gray70", "darkgreen"), labels = c("Mowed/Unfertilized", "Mowed/Fertilized"))+
 xlab("Treatment")+
 ylab("Soil pH")+
@@ -318,12 +335,6 @@ c_percent
 #Save plot 
 ggsave("../figures/c_percent.png", plot=c_percent, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
 
-#Another visual of c_percent
-ggplot(bac_design, aes(treatment, c_percent)) +
-  geom_point()+
-  facet_wrap(~ditch + year)
-
-
 #n percent 
 n_percent <- ggplot(M_Mf, aes(x=treatment, y=n_percent, color=as.factor(treatment)))+ geom_boxplot() +
 geom_point(aes(color=factor(treatment), shape=ditch), size=2, position = position_jitterdodge()) + scale_color_manual(name="treatment", values=c("gray70", "darkgreen"), labels = c("Mowed/Unfertilized", "Mowed/Fertilized"))+
@@ -361,8 +372,8 @@ bc_dist_pcoa <- cmdscale(bc_dist, k=3, eig=TRUE, add=FALSE)
 explainvar1a <- round(bc_dist_pcoa$eig[1] / sum(bc_dist_pcoa$eig), 3) * 100
 explainvar2a <- round(bc_dist_pcoa$eig[2] / sum(bc_dist_pcoa$eig), 3) * 100
 sum.eiga <- sum(explainvar1a, explainvar2a)
-explainvar1a #(18.5%)
-explainvar2a #(12.5%)
+explainvar1a #(18.5%) #NEW DATA SHOWS 5.2%
+explainvar2a #(12.5%) #NEW DATA SHOWS 4%
 pcoa.groups <- paste(bac_design$ditch, bac_design$treatment, sep = "_") #These are factors from the design file.
 pcoa.points <- data.frame(bc_dist_pcoa$points, group = pcoa.groups)  #df set in above chunk
 
@@ -481,9 +492,9 @@ axis.line = element_line(colour = "black"))+
 geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") + 
   geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
-scale_colour_manual(values = c("gray70","darkgreen")) +
-scale_shape_manual(values = c(16,22,15)) +
-  scale_size_manual(values = c(0.5,5,10)) +
+scale_colour_manual(values = c("gray70","darkgreen","gray70","darkgreen")) +
+scale_shape_manual(values = c(0.10,0.25,1,5,10,15,20)) +
+  scale_size_manual(values = c(0.5,1,5,10,15,20,25)) +
 #Sets map coordinates
 coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
 #Sets axis text and put border around plot
@@ -503,7 +514,7 @@ labs(colour="Treatment") +
 ggtitle("Bacterial 16S rRNA Community Composition")+
 theme(legend.position="right")
 
-plot2
+plot2 #Line 496/497 need to choose appropriate sizes for the years and data points
 
 #Save plot 
 ggsave("../figures/bc_PCoA_plot2.png", plot=plot2, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
@@ -537,7 +548,7 @@ c_percent_aov <- aov(log(c_percent) ~ fertilization*mowing*ditch*year, data = bc
  anova(c_percent_aov)
 
 #pH
-pH_aov <- aov(pH ~ fertilization*mowing*ditch*year, data = bc_diversity)
+pH_aov <- aov(pH_avg ~ fertilization*mowing*ditch*year, data = bc_diversity)
 anova(pH_aov)
 
 #Bacterial community composition
@@ -567,7 +578,7 @@ c_percent_aov <- aov(log(c_percent) ~ fertilization*ditch*year, data = bc_divers
 anova(c_percent_aov)
 
 #pH
-pH_aov <- aov(pH ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
+pH_aov <- aov(pH_avg ~ fertilization*ditch*year, data = bc_diversity_M_Mf)
 anova(pH_aov)
 
 #Bacterial community composition
@@ -659,6 +670,8 @@ theme_bw() +
           fill="white", size=1))
 plant_rich
 
+#Over the years 2015,2016,2017, 2018 plant species richness declined when fertilization was introduced. Soil moisture shown by the circles (wet plots) or triangles (dry plots) seems to play a less significant role compared to treatment in plant species richness.
+
 #Save plot 
 ggsave("../figures/plant_richness.png", plot=plant_rich, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
 
@@ -720,8 +733,8 @@ plant_dist_pcoa <- cmdscale(plant_dist, k=3, eig=TRUE, add=FALSE)
 explainvar1a <- round(plant_dist_pcoa$eig[1] / sum(plant_dist_pcoa$eig), 3) * 100
 explainvar2a <- round(plant_dist_pcoa$eig[2] / sum(plant_dist_pcoa$eig), 3) * 100
 sum.eiga <- sum(explainvar1a, explainvar2a)
-explainvar1a #27.4%
-explainvar2a #14.3%
+explainvar1a #29.4%
+explainvar2a #13.8%
 pcoa.groups <- paste(plant_M_MF_sort$ditch, plant_M_MF_sort$treatment, plant_M_MF_sort$year, sep = "_") #These are factors from the design file.
 pcoa.points <- data.frame(plant_dist_pcoa$points, group = pcoa.groups)  #df set in above chunk
 
@@ -760,8 +773,8 @@ geom_errorbarh(aes(xmax=V1+V1e, xmin=V1-V1e, height=0), colour="black") +
   geom_errorbar(aes(ymax=V2+V2e, ymin=V2-V2e, width=0), colour="black") +
 #Set colors for treatments
 scale_colour_manual(values = c("gray70","darkgreen")) +
-scale_shape_manual(values = c(16,22,15)) +
-  scale_size_manual(values = c(0.5,5,10)) +
+scale_shape_manual(values = c(20,0,15,16)) +
+  scale_size_manual(values = c(0.50,5,10,15)) +
 #Sets map coordinates
 coord_cartesian(xlim = c(-0.2, 0.2), ylim = c(-0.2, 0.2)) +
 #Sets axis text and put border around plot
@@ -775,13 +788,14 @@ theme(legend.text=element_text(size=14, face="bold"), legend.title = element_tex
 #Sets size of tick marks on axis
 theme(axis.ticks.length=unit(0.3,"cm")) +
 #Sets labels for plot title, axis titles, and legend headings
-xlab("PCoA 1 (27.4%)") + ylab("PCoA 2 (14.3%)") +
+xlab("PCoA 1 (29.4%)") + ylab("PCoA 2 (13.8%)") +
 labs(shape = "Ditch") +
 labs(colour="Treatment") +
 ggtitle("Plant Community Composition")+
 theme(legend.position="right")
 
 plot2
+#Fertilized (green) plots clustered together meaning their community composition is most similar compared to the Unfertilized (grey) plots. Soil moisture (ditch effect) also played a role in how plant communities developed. Drier fertilized communities are more related to one another than drier unfertilized plots
 
 #Save plot 
 ggsave("../figures/plant_PCoA_plot.png", plot=plot2, device=NULL, path=NULL, scale=1, width=6.3, height=4.4, dpi=900, limitsize=TRUE)
